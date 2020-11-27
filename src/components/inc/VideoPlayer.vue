@@ -6,7 +6,6 @@
             crossorigin="anonymous"
             muted
             autoplay
-            @click="playPause"
         >
         </video>
 
@@ -39,12 +38,6 @@ export default {
         }
     },
     methods: {
-        playPause() {
-            if(this.playing) {
-                this.videoStream.pause()
-            }
-            else this.videoStream.play()
-        },
         startProcessing() {
             this.playing = true
         },
@@ -65,7 +58,7 @@ export default {
     }
 
     video {
-        z-index: 100;
+        z-index: 50;
         position: absolute;
         top: 0px;
         left: 0px;

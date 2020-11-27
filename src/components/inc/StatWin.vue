@@ -1,12 +1,21 @@
 <template>
-    <table class = "stat-win">
-        <tr
-            v-for="object in objects"
-            :key="object.id"
-        >
-        prova
-        </tr>
-    </table>
+    <div class = "stat-win">
+        <table>
+            <tr>
+                <th> ID </th>
+                <th> Class </th>
+                <th> Score </th>
+            </tr>
+            <tr
+                v-for="object in objects"
+                :key="object.id"
+            >
+                <td> {{object.id}} </td>
+                <td> {{object.class}} </td>
+                <td> {{object.score}} </td>
+            </tr>
+        </table>
+    </div>
 </template>
 
 <script>
@@ -22,6 +31,14 @@ export default {
 </script>
 
 <style scoped>
+    table{
+        width: 100%;
+    }
+
+    tr:nth-child(even) {
+        background-color: #363333  
+    }
+
     .stat-win {
         z-index: 100;
         position: fixed;

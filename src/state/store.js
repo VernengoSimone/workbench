@@ -18,6 +18,8 @@ const store = new Vuex.Store({
         (object) => {
           object.id = state.count
           state.count ++
+          
+          object.score = Math.round(object.score * 100) / 100
         }
       )
       return state.identifiedObjects

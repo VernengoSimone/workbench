@@ -7,6 +7,7 @@
       <canvas
         id="publisher_canvas"
         ref="publisher_canvas"
+        @click="playPause"
       ></canvas>
     </div>
 </template>
@@ -37,6 +38,16 @@ export default {
     canvas: null,
     rect: null,
     model: null,
+    videoRatio: null,
+    canvasRatio: null,
+    videoDimensions: {
+      width: null,
+      height: null,
+    },
+    videoOffset: {
+      x: null,
+      y: null,
+    }
   }),
   created() {
       window.addEventListener("resize", this.resizeCanvas);
@@ -62,6 +73,14 @@ export default {
     async initCoco(){
       this.model = await cocoSsd.load()
 
+      /*
+      in order to draw the bboxes in the right place we need
+      the actual space occupied by the video and dimensions (offset) of
+      the black bars
+      */
+      this.computeVideoDimension()
+      this.computeOffset()
+
       // use setInterval to obtain 5 detection sets per second
       /* setInterval(() => {
         this.drawBbox()
@@ -75,13 +94,52 @@ export default {
       return this.model.detect(this.videoStream)
     },
 
-    scaleCoordinates (coordinates) {
-      // we expect the coordinates to be in the form [x, y, widht, height]
+    computeVideoDimension() {
+      this.videoRatio = this.videoStream.videoWidth / this.videoStream.videoHeight
+      this.canvasRatio = this.canvas.getWidth() / this.canvas.getHeight()
+
+      if(this.videoRatio > this.canvasRatio) {
+        // in this case video fills the whole WIDTH of the canvas
+        this.videoDimensions.width = this.canvas.getWidth()
+        this.videoDimensions.height = this.videoDimensions.width / this.videoRatio
+      }
+      else {
+        // in this case video fills the whole HEIGHT of the canvas
+        this.videoDimensions.height = this.canvas.getHeight()
+        this.videoDimensions.width = this.videoDimensions.height * this.videoRatio
+      }
+    },
+
+    computeOffset() {
+      if(this.videoRatio > this.canvasRatio) {
+        // in this case we'll have black bars along y
+        this.videoOffset.y = Math.round((this.canvas.getHeight() - this.videoDimensions.height) / 2)
+        this.videoOffset.x = 0
+      }
+      else {
+        // in this case we'll have black bars along x
+        this.videoOffset.y = 0
+        this.videoOffset.x = Math.round((this.canvas.getWidth() - this.videoDimensions.width) / 2)
+      }
+    },
+
+    sumOffset(coordinates) {
       return {
-        x: coordinates[0] * (this.canvas.getWidth() / this.videoStream.videoWidth),
-        y: coordinates[1] * (this.canvas.getHeight() / this.videoStream.videoHeight),
-        width: coordinates[1] * (this.canvas.getWidth() / this.videoStream.videoWidth),
-        height: coordinates[2] * (this.canvas.getHeight() / this.videoStream.videoHeight)
+        x: coordinates.x + this.videoOffset.x,
+        y: coordinates.y + this.videoOffset.y,
+        width: coordinates.width,
+        height: coordinates.height
+      }
+    },
+
+    scaleCoordinates (coordinates) {
+      // we expect the coordinates to be in the form [x, y, width, height]
+      return {
+        x: coordinates[0] * (this.videoDimensions.width / this.videoStream.videoWidth),
+        y: coordinates[1] * (this.videoDimensions.height / this.videoStream.videoHeight),
+        // TODO: this is not what's expected, find why
+        width: coordinates[3] * (this.videoDimensions.width / this.videoStream.videoWidth),
+        height: coordinates[2] * (this.videoDimensions.height / this.videoStream.videoHeight)
       }
     },
 
@@ -93,10 +151,10 @@ export default {
         this.$store.commit("setIdentifiedObjects", predictions)
 
         predictions.forEach((element) => {
-          // console.info(this.videoStream.height)
-          // console.info(this.scaleCoordinates(element.bbox))
           this.drawPrediction(
-            this.scaleCoordinates(element.bbox)
+            this.sumOffset(
+              this.scaleCoordinates(element.bbox)
+            )
           )
         })
       }
@@ -123,6 +181,7 @@ export default {
         height: width
       })
       this.canvas.add(rect)
+      this.canvas.renderAll()
 
       return(rect)
     },
@@ -139,6 +198,13 @@ export default {
     clearCanvas() {
       this.canvas.clear()
     },
+
+    playPause() {
+          if(this.playing) {
+              this.videoStream.pause()
+          }
+          else this.videoStream.play()
+    },
   },
 }
 
@@ -146,7 +212,7 @@ export default {
 
 <style>
 .publisherCanvas{
-  z-index: 0;
+  z-index: 100;
   position: absolute;
   top: 0;
   bottom: 0;

@@ -1,9 +1,7 @@
 <template>
     <div class="menu">
-        <div class="menu-item">
-            <div class="menu-text">
-            Test
-            </div>
+        <div class="menu-text">
+            Work in progress
         </div>
     </div>
 </template>
@@ -20,7 +18,6 @@ export default {
     z-index: 100;
     position: fixed;
     background: #5a5959;
-    align-items: center;
     justify-content: center;
     top: 0;
     right: 0;
@@ -28,24 +25,13 @@ export default {
     height: 60%;
 }
 
-.menu-item {
-    flex: 1;
-    text-align: center;
+.menu-text{
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.menu-text{
     font-size: 20px;
     color: #818181;
-    cursor: pointer;
-    padding: 10px;
-    border-bottom: 2px solid #2e2d2d;
-    width: fit-content;
-}
-
-.menu-text:hover {
-    border-bottom: 2px solid #ffffff;
+    width: 100%;
+    height: 100%;
 }
 </style>
