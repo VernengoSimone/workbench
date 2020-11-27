@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve --open",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@tensorflow-models/coco-ssd": "^2.1.0",
+    "@tensorflow/tfjs": "^2.7.0",
     "core-js": "^3.6.5",
-    "vue": "^2.6.11"
+    "fabric": "^4.2.0",
+    "vue": "^2.6.11",
+    "vuex": "^3.6.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
