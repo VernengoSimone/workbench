@@ -16,6 +16,6 @@ yarn serve
 
 ## TODO list
 - [X] Working object tracking bounding boxes with a TF.js built-in model.
-- [] Implement YoloV4-tiny and compare to built-in model
-- [] Implement SORT Object Tracking algorithm
-- [] Complete the menu inserting a list of suitable videos for test.
+- [ ] Implement YoloV4-tiny and compare to built-in model
+- [ ] Implement SORT Object Tracking algorithm
+- [ ] Complete the menu inserting a list of suitable videos for test.
