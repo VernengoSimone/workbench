@@ -1,4 +1,4 @@
-# workbench
+# Workbench
 
 This project is meant to provide a tool to develop TensorFlow.js implentation of object tracking models.
 
@@ -9,7 +9,7 @@ NOTE: Here we refer to models which determine if there is are objects belonging 
 yarn install
 ```
 
-### How to run the project
+## Run the project
 ```
 yarn serve
 ```
