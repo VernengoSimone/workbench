@@ -2,6 +2,15 @@
     <div class = "stat-win">
         <table>
             <tr>
+                <th> FPS </th>
+            </tr>
+            <tr>
+                <td v-if="fps===null" style="text-align: center"> - </td>
+                <td v-else style="text-align: center"> {{ fps }} </td>
+            </tr>
+        </table>
+        <table>
+            <tr>
                 <th> ID </th>
                 <th> Class </th>
                 <th> Score </th>
@@ -24,7 +33,10 @@ export default {
     computed: {
         objects () {
             return this.$store.getters.getIdentifiedObjects
-        }
+        },
+        fps () {
+            return this.$store.getters.getFps
+        },
     }
     
 }

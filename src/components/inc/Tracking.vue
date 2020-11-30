@@ -47,8 +47,23 @@ export default {
     videoOffset: {
       x: null,
       y: null,
-    }
+    },
+    time: 0,
+    fpsCount: 0,
+    interval: null,
   }),
+  computed: {
+    inferMode() {
+      return this.$store.getters.getInferMode
+    }
+  },
+  watch: {
+    inferMode() {
+      clearInterval(this.interval)
+      this.interval = null
+      this.startInference()
+    }
+  },
   created() {
       window.addEventListener("resize", this.resizeCanvas);
   },
@@ -68,6 +83,10 @@ export default {
     resizeCanvas() {
       this.canvas.setHeight(this.$refs.publisherCanvas.clientHeight);
       this.canvas.setWidth(this.$refs.publisherCanvas.clientWidth);
+      if (this.videoStream){
+        this.computeVideoDimension()
+        this.computeOffset()
+      }
     },
 
     async initCoco(){
@@ -80,14 +99,24 @@ export default {
       */
       this.computeVideoDimension()
       this.computeOffset()
+      this.startInference()
+    },
 
-      // use setInterval to obtain 5 detection sets per second
-      /* setInterval(() => {
-        this.drawBbox()
-      }, 200) */
+    startInference() {
+      switch (this.inferMode) {
+        case "user":
+          // use setInterval to obtain 5 detection sets per second
+          console.info(`The object tracking model evaluates one frame every 0.2 seconds`)
+          this.interval = setInterval(() => {
+            this.drawBbox()
+          }, 200)
+          break
 
-      // use requestAnimationFrame to draw every frame
-      requestAnimationFrame(this.drawBbox)
+        case "auto":
+          // use requestAnimationFrame to draw every frame
+          console.info(`The object tracking model evaluates every frame`)
+          requestAnimationFrame(this.drawBbox)
+      }
     },
 
     async identifyObjects() {
@@ -113,7 +142,7 @@ export default {
     computeOffset() {
       if(this.videoRatio > this.canvasRatio) {
         // in this case we'll have black bars along y
-        this.videoOffset.y = Math.round((this.canvas.getHeight() - this.videoDimensions.height) / 2)
+        this.videoOffset.y = (this.canvas.getHeight() - this.videoDimensions.height) / 2
         this.videoOffset.x = 0
       }
       else {
@@ -137,7 +166,7 @@ export default {
       return {
         x: coordinates[0] * (this.videoDimensions.width / this.videoStream.videoWidth),
         y: coordinates[1] * (this.videoDimensions.height / this.videoStream.videoHeight),
-        // TODO: this is not what's expected, find why
+        // TODO: this is not what's expected, find out why
         width: coordinates[3] * (this.videoDimensions.width / this.videoStream.videoWidth),
         height: coordinates[2] * (this.videoDimensions.height / this.videoStream.videoHeight)
       }
@@ -145,6 +174,16 @@ export default {
 
     async drawBbox(){
       if (this.playing) {
+        let timeInterval = Date.now() - this.time
+        // If the time was not initialized
+        if (this.time === 0) this.time = Date.now()
+        // Here we calculate the frame rate every second
+        else if (timeInterval >= 1000) {
+          this.$store.commit("setFps", 1000 * this.fpsCount / timeInterval)
+          this.time = Date.now()
+          this.fpsCount = 0
+        }
+
         this.clearCanvas()
         
         const predictions = await this.identifyObjects()
@@ -157,8 +196,11 @@ export default {
             )
           )
         })
+
+        this.fpsCount ++
       }
-      requestAnimationFrame(this.drawBbox)
+
+      if (this.inferMode === "auto") requestAnimationFrame(this.drawBbox)
 
     },
 
