@@ -35,8 +35,8 @@ export default {
         this.videoStream.onloadeddata = () => {
             this.videoStream.currentTime = 40
             this.videoStream.onplay = this.startProcessing
-            this.videoStream.play()
             this.videoStream.onpause = this.stopProcessing
+            this.videoStream.play()
         }
     },
     methods: {

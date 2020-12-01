@@ -81,8 +81,8 @@ export default {
     },
 
     resizeCanvas() {
-      this.canvas.setHeight(this.$refs.publisherCanvas.clientHeight);
-      this.canvas.setWidth(this.$refs.publisherCanvas.clientWidth);
+      this.canvas.setHeight(this.$refs.publisherCanvas.clientHeight)
+      this.canvas.setWidth(this.$refs.publisherCanvas.clientWidth)
       if (this.videoStream){
         this.computeVideoDimension()
         this.computeOffset()
