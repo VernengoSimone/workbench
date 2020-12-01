@@ -7,7 +7,7 @@ NOTE: Here we refer to models which determine if there are objects belonging to 
 ## TODO list
 - [X] Implement bounding boxes support with a TF.js built-in OD model.
 - [X] Create a statistic window
-- [ ] Complete create a menu in which we can select a video from a list of suitable ones.
+- [ ] Create a menu in which we can select a video from a list of suitable ones.
 - [ ] Implement YoloV4-tiny (or a previous version, depending on which works better on TF.js) and compare with built-in model
 - [ ] Webscrape images of network devices
 - [ ] Create a dataset by annotating the images*
