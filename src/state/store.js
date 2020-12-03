@@ -10,12 +10,14 @@ const store = new Vuex.Store({
     identifiedObjects: [],
     objCount: 0,
     inferMode: "auto",
+    inferTime: 0.2,
   },
   getters: {
     getFps: state => state.fps,
     getFpsAvg: state => state.fpsAvg,
     getIdentifiedObjects: state => state.identifiedObjects,
-    getInferMode: state => state.inferMode
+    getInferMode: state => state.inferMode,
+    getInferTime: state => state.inferTime,
   },
   mutations: {
     setFps (state, value) {
@@ -44,8 +46,13 @@ const store = new Vuex.Store({
         console.info("Inference mode set to " + value)
         state.inferMode = value
       }
-      else console.info("The inference mode requested is not available: " + value)
+      else console.error("The inference mode requested is not available: " + value)
     },
+
+    setInferTime (state, value) {
+      if (state.InferTime > 0) state.InferTime = value
+      else console.error("The Inference time entered is negative.")
+    }
   }
 })
 

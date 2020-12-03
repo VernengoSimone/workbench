@@ -17,6 +17,7 @@
 import { fabric } from 'fabric'
 import '@tensorflow/tfjs'
 import * as cocoSsd from "@tensorflow-models/coco-ssd"
+import yolo from "tfjs-yolo"
 
 export default {
   name: 'Tracking',
@@ -36,8 +37,9 @@ export default {
   },
   data: () => ({
     canvas: null,
-    rect: null,
     model: null,
+    modelName: "yolo",
+    predictions: [],
     videoRatio: null,
     canvasRatio: null,
     videoDimensions: {
@@ -55,6 +57,9 @@ export default {
   computed: {
     inferMode() {
       return this.$store.getters.getInferMode
+    },
+    inferTime() {
+      return this.$store.getters.getInferTime
     }
   },
   watch: {
@@ -69,7 +74,8 @@ export default {
   },
   mounted() {
     this.initCanvas()
-    this.initCoco()
+    if (this.modelName === "yolo") this.initYolo()
+    else if (this.modelName === "coco") this.initCoco()
   },
   destroyed() {
     window.removeEventListener("resize", this.resizeCanvas);
@@ -102,25 +108,31 @@ export default {
       this.startInference()
     },
 
+    async initYolo() {
+      this.model = await yolo.v3tiny()
+
+      this.computeVideoDimension()
+      this.computeOffset()
+      this.startInference()
+    },
+
     startInference() {
       switch (this.inferMode) {
         case "user":
           // use setInterval to obtain 5 detection sets per second
-          console.info(`The object tracking model evaluates one frame every 0.2 seconds`)
+          console.info("The object tracking model evaluates one frame every " + this.inferTime + " seconds")
           this.interval = setInterval(() => {
             this.drawBbox()
-          }, 200)
+          }, this.inferTime)
           break
 
         case "auto":
           // use requestAnimationFrame to draw every frame
+          /* NOTE: checking the framerate it's obvious that there some sort of
+          framerate limiter implemented into coco-ssd */
           console.info(`The object tracking model evaluates every frame`)
           requestAnimationFrame(this.drawBbox)
       }
-    },
-
-    async identifyObjects() {
-      return this.model.detect(this.videoStream)
     },
 
     computeVideoDimension() {
@@ -164,11 +176,42 @@ export default {
     scaleCoordinates (coordinates) {
       // we expect the coordinates to be in the form [x, y, width, height]
       return {
-        x: coordinates[0] * (this.videoDimensions.width / this.videoStream.videoWidth),
-        y: coordinates[1] * (this.videoDimensions.height / this.videoStream.videoHeight),
-        // TODO: this is not what's expected, find out why
-        width: coordinates[3] * (this.videoDimensions.width / this.videoStream.videoWidth),
-        height: coordinates[2] * (this.videoDimensions.height / this.videoStream.videoHeight)
+        x: coordinates.x * (this.videoDimensions.width / this.videoStream.videoWidth),
+        y: coordinates.y * (this.videoDimensions.height / this.videoStream.videoHeight),
+        width: coordinates.width * (this.videoDimensions.width / this.videoStream.videoWidth),
+        height: coordinates.height * (this.videoDimensions.height / this.videoStream.videoHeight)
+      }
+    },
+
+    async identifyObjects() {
+      if (this.modelName === "coco") {
+        const output = await this.model.detect(this.videoStream)
+        const boxes = output.map((element) => {
+          return {
+            x: element.bbox[0],
+            y: element.bbox[1],
+            // TODO: width and height are swapped, find out why
+            width: element.bbox[2],
+            height: element.bbox[3],
+            score: element.score,
+            class: element.class
+          }
+        })
+        return boxes
+      }
+      else if (this.modelName === "yolo"){
+        const output = await this.model.predict(this.videoStream)
+        const boxes = output.map((element) => {
+          return {
+            x: element.left,
+            y: element.top,
+            width: element.width,
+            height: element.height,
+            score: element.score,
+            class: element.class
+          }
+        })
+        return boxes
       }
     },
 
@@ -184,19 +227,20 @@ export default {
           this.fpsCount = 0
         }
 
-        this.clearCanvas()
+        this.predictions = await this.identifyObjects()
+        this.$store.commit("setIdentifiedObjects", this.predictions)
         
-        const predictions = await this.identifyObjects()
-        this.$store.commit("setIdentifiedObjects", predictions)
-
-        predictions.forEach((element) => {
+        this.canvas.clear()
+        
+        this.predictions.forEach((element) => {
           this.drawPrediction(
             this.sumOffset(
-              this.scaleCoordinates(element.bbox)
+              this.scaleCoordinates(element)
             )
           )
         })
 
+        this.canvas.renderAll()
         this.fpsCount ++
       }
 
@@ -219,26 +263,21 @@ export default {
         top: y,
         fill: "transparent",
         stroke: "yellow",
-        width: height,
-        height: width
+        width: width,
+        height: height
       })
       this.canvas.add(rect)
-      this.canvas.renderAll()
 
       return(rect)
     },
 
-    updateRect(x, y, rect=this.rect) {
+    updateRect(x, y, rect) {
       rect.set( {
         left: x,
         top: y,
         }
       )
       this.canvas.renderAll()
-    },
-
-    clearCanvas() {
-      this.canvas.clear()
     },
 
     playPause() {

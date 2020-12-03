@@ -2,10 +2,9 @@
     <div id="video-player">
         <video 
             ref="video"
-            src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+            src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4"
             crossorigin="anonymous"
             muted
-            loop
         >
         </video>
 
@@ -33,7 +32,6 @@ export default {
         this.videoStream = this.$refs.video
 
         this.videoStream.onloadeddata = () => {
-            this.videoStream.currentTime = 40
             this.videoStream.onplay = this.startProcessing
             this.videoStream.onpause = this.stopProcessing
             this.videoStream.play()
