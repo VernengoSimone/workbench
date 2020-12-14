@@ -38,7 +38,7 @@ export default {
   data: () => ({
     canvas: null,
     model: null,
-    modelName: "yolo",
+    modelName: "coco",
     predictions: [],
     videoRatio: null,
     canvasRatio: null,

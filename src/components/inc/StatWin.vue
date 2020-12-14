@@ -54,6 +54,7 @@ export default {
     .stat-win {
         z-index: 100;
         position: fixed;
+        overflow: auto;
         background-color: rgb(0, 0, 0);
         bottom: 0;
         right: 0;
