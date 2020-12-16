@@ -8227,6 +8227,11 @@ text-table@^0.2.0:
   resolved "https://registry.npm.taobao.org/text-table/download/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
   integrity sha1-f17oI66AUgfACvLfSoTsP8+lcLQ=
 
+tfjs-yolo@^0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/tfjs-yolo/-/tfjs-yolo-0.0.4.tgz#b2e23c1cc3a6073aa917ddc39e0d9f0679398542"
+  integrity sha512-6z5B9JNB2TefFgxnpba4zVGpB3BBNdGtE4xMJRc5/StYbhF3+/tpmuQyYdRlwsKGiW8loz4Jg6zVT9UxaITbXA==
+
 thenify-all@^1.0.0:
   version "1.6.0"
   resolved "https://registry.npm.taobao.org/thenify-all/download/thenify-all-1.6.0.tgz#1a1918d402d8fc3f98fbf234db0bcc8cc10e9726"

@@ -2,9 +2,6 @@
     <div id="video-player">
         <video 
             ref="video"
-            src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4"
-            crossorigin="anonymous"
-            muted
         >
         </video>
 
@@ -28,14 +25,21 @@ export default {
         videoStream: null,
         playing: false,
     }),
-    mounted() {
-        this.videoStream = this.$refs.video
+    async mounted() {
+        this.videoStream = await new Promise(resolve => {
+            this.$refs.video.onloadeddata = () => {
+                this.$refs.video.onplay = this.startProcessing
+                this.$refs.video.onpause = this.stopProcessing
+                this.$refs.video.play()
+                resolve(this.$refs.video)
+            }
+            this.$refs.video.crossOrigin = "anonymous"
+            this.$refs.video.muted = true
+            this.$refs.video.loop = false
+            this.$refs.video.type = "video/mp4"
+            this.$refs.video.src = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4"
+        })
 
-        this.videoStream.onloadeddata = () => {
-            this.videoStream.onplay = this.startProcessing
-            this.videoStream.onpause = this.stopProcessing
-            this.videoStream.play()
-        }
     },
     methods: {
         startProcessing() {
