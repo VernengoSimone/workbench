@@ -26,6 +26,9 @@ export default {
         playing: false,
     }),
     async mounted() {
+        // send and empty video to tracking in order to avoid vuejs error
+        this.videoStream = this.$refs.video
+        // substitute when test video is ready
         this.videoStream = await new Promise(resolve => {
             this.$refs.video.onloadeddata = () => {
                 this.$refs.video.onplay = this.startProcessing
