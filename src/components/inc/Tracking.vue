@@ -75,7 +75,7 @@ export default {
   mounted() {
     this.initCanvas()
     if (this.modelName === "yolo") this.initYolo()
-    else if (this.modelName === "coco") this.initCoco()
+    else if (this.modelName === "coco") this.initCoco(true)
   },
   destroyed() {
     window.removeEventListener("resize", this.resizeCanvas);
@@ -95,8 +95,16 @@ export default {
       }
     },
 
-    async initCoco(){
-      this.model = await cocoSsd.load()
+    async initCoco(custom){
+
+      if (custom === true) {
+        this.model = await cocoSsd.load({
+          modelUrl: "http://localhost:8080/model.json"
+        })
+      }
+      else {
+        this.model = await cocoSsd.load()
+      }
 
       /*
       in order to draw the bboxes in the right place we need
