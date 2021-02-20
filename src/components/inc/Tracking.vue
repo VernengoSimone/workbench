@@ -16,8 +16,10 @@
 
 import { fabric } from 'fabric'
 import '@tensorflow/tfjs'
-import * as cocoSsd from "@tensorflow-models/coco-ssd"
+// import * as cocoSsd from "@tensorflow-models/coco-ssd"
+import * as cocoSsd from "test-ssd"
 import yolo from "tfjs-yolo"
+// import * as sort from "../../sort/sort.js"
 
 export default {
   name: 'Tracking',
@@ -76,7 +78,15 @@ export default {
     this.initCanvas()
     if (this.modelName === "yolo") this.initYolo()
     else if (this.modelName === "coco") this.initCoco(true)
-  },
+    /*
+    const test = new sort.SortTracker()
+    console.info("printing KF object before update")
+    console.info(test)
+    test.update({x: 10, y: 10, width: 10, height: 10})
+    console.info("printing KF object after update")
+    console.info(test)
+    */
+    },
   destroyed() {
     window.removeEventListener("resize", this.resizeCanvas);
   },
@@ -96,7 +106,7 @@ export default {
     },
 
     async initCoco(custom){
-
+      cocoSsd.load()
       if (custom === true) {
         this.model = await cocoSsd.load({
           modelUrl: "http://localhost:8080/model.json"
