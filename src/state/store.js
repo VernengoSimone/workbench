@@ -11,6 +11,8 @@ const store = new Vuex.Store({
     objCount: 0,
     inferMode: "auto",
     inferTime: 0.2,
+    debugMeasures: null,
+    debugMatches: null,
   },
   getters: {
     getFps: state => state.fps,
@@ -18,6 +20,8 @@ const store = new Vuex.Store({
     getIdentifiedObjects: state => state.identifiedObjects,
     getInferMode: state => state.inferMode,
     getInferTime: state => state.inferTime,
+    getDebugMeasures: state => state.debugMeasures,
+    getDebugMatches: state => state.debugMatches
   },
   mutations: {
     setFps (state, value) {
@@ -52,7 +56,27 @@ const store = new Vuex.Store({
     setInferTime (state, value) {
       if (state.InferTime > 0) state.InferTime = value
       else console.error("The Inference time entered is negative.")
-    }
+    },
+
+    setDebugMeasures (state, measures) {
+      const keys = Object.keys(measures)
+      // Expected shape: array [x, y, width, height]
+      // x: coordinate along axis x of the left corner
+      // y: coordinate along axis y of the left corner
+      state.debugMeasures = keys.map(key => {
+        const measure = [
+          measures[key].x,
+          measures[key].y,
+          measures[key].width,
+          measures[key].height
+        ]
+        return measure
+      })
+    },
+
+    setDebugMatches (state, matches) {
+      state.debugMatches = matches
+    },
   }
 })
 
