@@ -15,11 +15,12 @@
 <script>
 
 import { fabric } from 'fabric'
+import { saveAs } from 'file-saver'
 import '@tensorflow/tfjs'
 // import * as cocoSsd from "@tensorflow-models/coco-ssd"
 import * as cocoSsd from "test-ssd"
 import yolo from "tfjs-yolo"
-// import * as sort from "../../sort/sort.js"
+import * as sort from "../../sort/sort.js"
 
 export default {
   name: 'Tracking',
@@ -62,6 +63,12 @@ export default {
     },
     inferTime() {
       return this.$store.getters.getInferTime
+    },
+    debugMeasures() {
+      return this.$store.getters.getDebugMeasures
+    },
+    debugMatches() {
+      return this.$store.getters.getDebugMatches
     }
   },
   watch: {
@@ -69,23 +76,25 @@ export default {
       clearInterval(this.interval)
       this.interval = null
       this.startInference()
-    }
+    },
+    debugMeasures() {
+      this.testKalman()
+    },
   },
   created() {
       window.addEventListener("resize", this.resizeCanvas);
   },
   mounted() {
     this.initCanvas()
+    /*
     if (this.modelName === "yolo") this.initYolo()
     else if (this.modelName === "coco") this.initCoco(true)
-    /*
-    const test = new sort.SortTracker()
-    console.info("printing KF object before update")
-    console.info(test)
-    test.update({x: 10, y: 10, width: 10, height: 10})
-    console.info("printing KF object after update")
-    console.info(test)
     */
+    sort.computeIou(
+      [{x: 5, y: 1, width: 1, height: 1}, {x: 2, y: 2, width: 2, height: 2}],
+      [{x: 3, y: 3, width: 3, height: 3}, {x: 4, y: 4, width: 4, height: 4}]
+    )
+
     },
   destroyed() {
     window.removeEventListener("resize", this.resizeCanvas);
@@ -252,6 +261,7 @@ export default {
         
         this.predictions.forEach((element) => {
           this.drawPrediction(
+            // translate and scale to fit video size in the window
             this.sumOffset(
               this.scaleCoordinates(element)
             )
@@ -304,6 +314,30 @@ export default {
           }
           else this.videoStream.play()
     },
+
+    testKalman() {
+      const z0 = this.debugMeasures[0]
+      const tracker = new sort.SortTracker(z0)
+      this.debugMeasures.slice(1).forEach(element => {
+        tracker.update(element)
+      })
+      
+      // saving the result in order to compare with know estimations
+      // we create the structure for the json to be easily readable in python
+      const history = {}
+      for (var i = 0; i < tracker.history.length; i++) {
+        history[i] = {
+          x: tracker.history[i][0],
+          y: tracker.history[i][1],
+          width: tracker.history[i][2],
+          height: tracker.history[i][3]
+        }
+      }
+
+      // and download the file
+      var blob = new Blob([JSON.stringify(history)], {type: "application/json"});
+      saveAs(blob, "estimations.txt");
+    }
   },
 }
 

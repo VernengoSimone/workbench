@@ -11,6 +11,7 @@
     "@tensorflow/tfjs": "^3.0.0",
     "core-js": "^3.6.5",
     "fabric": "^4.2.0",
+    "file-saver": "^2.0.5",
     "kalman": "^0.0.2",
     "sylvester": "^0.0.21",
     "test-ssd": "file:../test-package",
