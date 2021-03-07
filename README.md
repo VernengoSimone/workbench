@@ -12,8 +12,8 @@ NOTE: Here we refer to models which determine if there are objects belonging to 
 - [X] Webscrape images of network devices
 - [X] Create a dataset by annotating the images
 - [ ] Train OD model for classes of interest
-- [ ] Track accuracy and speed metrics
-- [ ] Implement SORT OT algorithm
+- [X] Track accuracy an  d speed metrics
+- [X] Implement SORT OT algorithm
 
 ## Project setup
 ```

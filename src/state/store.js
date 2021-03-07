@@ -12,7 +12,7 @@ const store = new Vuex.Store({
     inferMode: "auto",
     inferTime: 0.2,
     debugMeasures: null,
-    debugMatches: null,
+    debugMatches: {detections: {}, tracked: {}, matches: {}},
   },
   getters: {
     getFps: state => state.fps,
@@ -21,7 +21,7 @@ const store = new Vuex.Store({
     getInferMode: state => state.inferMode,
     getInferTime: state => state.inferTime,
     getDebugMeasures: state => state.debugMeasures,
-    getDebugMatches: state => state.debugMatches
+    getDebugMatches: state => state.debugMatches,
   },
   mutations: {
     setFps (state, value) {
@@ -74,8 +74,37 @@ const store = new Vuex.Store({
       })
     },
 
-    setDebugMatches (state, matches) {
-      state.debugMatches = matches
+    setDebugMatches (state, input) {
+      var keys = Object.keys(input.detections)
+      state.debugMatches.detections = keys.map(key => {
+        const measure = {
+          x: input.detections[key].x,
+          y: input.detections[key].y,
+          width: input.detections[key].width,
+          height: input.detections[key].height
+        }
+        return measure
+      })
+
+      keys = Object.keys(input.tracked)
+      state.debugMatches.tracked = keys.map(key => {
+        const measure = {
+          x: input.tracked[key].x,
+          y: input.tracked[key].y,
+          width: input.tracked[key].width,
+          height: input.tracked[key].height
+        }
+        return measure
+      })
+
+      keys = Object.keys(input.matches)
+      state.debugMatches.matches = keys.map(key => {
+        const matches = {
+          detection: input.matches[key].detection,
+          tracked: input.matches[key].tracked 
+        }
+        return matches
+      })
     },
   }
 })

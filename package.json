@@ -13,6 +13,7 @@
     "fabric": "^4.2.0",
     "file-saver": "^2.0.5",
     "kalman": "^0.0.2",
+    "munkres-js": "^1.2.2",
     "sylvester": "^0.0.21",
     "test-ssd": "file:../test-package",
     "tfjs-yolo": "^0.0.4",

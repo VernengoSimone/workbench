@@ -72,12 +72,16 @@ export default {
     }
   },
   watch: {
-    inferMode() {
+    inferMode: function () {
       clearInterval(this.interval)
       this.interval = null
       this.startInference()
     },
-    debugMeasures() {
+    debugMatches: {
+      deep: true,
+      handler: "testIou"
+    },
+    debugMeasures: function () {
       this.testKalman()
     },
   },
@@ -91,7 +95,7 @@ export default {
     else if (this.modelName === "coco") this.initCoco(true)
     */
     sort.computeIou(
-      [{x: 5, y: 1, width: 1, height: 1}, {x: 2, y: 2, width: 2, height: 2}],
+      [{x: 1, y: 1, width: 1, height: 1}, {x: 2, y: 2, width: 2, height: 2}],
       [{x: 3, y: 3, width: 3, height: 3}, {x: 4, y: 4, width: 4, height: 4}]
     )
 
@@ -337,7 +341,16 @@ export default {
       // and download the file
       var blob = new Blob([JSON.stringify(history)], {type: "application/json"});
       saveAs(blob, "estimations.txt");
-    }
+    },
+    
+    testIou() {
+    // we want to minimize cost => maximize IoU
+    const costMat = sort.computeIou(this.debugMatches.detections, this.debugMatches.tracked).x(-1).elements
+    console.log(costMat)
+    const matches = sort.hungarian(costMat)
+    console.log(matches)
+    },
+    
   },
 }
 
