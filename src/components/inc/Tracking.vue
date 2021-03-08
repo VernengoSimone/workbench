@@ -345,10 +345,10 @@ export default {
     
     testIou() {
     // we want to minimize cost => maximize IoU
-    const costMat = sort.computeIou(this.debugMatches.detections, this.debugMatches.tracked).x(-1).elements
-    console.log(costMat)
-    const matches = sort.hungarian(costMat)
-    console.log(matches)
+    const test = new sort.Sort()
+    test.update(this.debugMatches.tracked)
+    test.update(this.debugMatches.detections)
+    console.log(test)
     },
     
   },

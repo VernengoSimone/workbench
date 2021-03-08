@@ -4,39 +4,82 @@ import * as munkres from "munkres-js"
 
 // convert [x, y, width, height] to [xc, yc, s, r]
 export function bbox_to_y(bbox) {
-    const xc = bbox[0] + bbox[2]/2
-    const yc = bbox[1] + bbox[3]/2
-    const s = bbox[2] * bbox[3]
-    const r = bbox[2] / bbox[3]
+    const xc = bbox.x + bbox.width/2
+    const yc = bbox.y + bbox.height/2
+    const s = bbox.width * bbox.height
+    const r = bbox.width / bbox.height
 
     const y = sylvester.Vector.create([xc, yc, s, r])
 
     return y
 }
 
-// convert [xc, yc, s, r] to [x, y, width, height]
+// convert [xc, yc, s, r, xc', yc', s'] to [x, y, width, height]
 export function tracker_to_bbox(tracker) {
     // to access a Sylvester Vector element we use the function e(i)
     // it returns the element a i-th position with i starting from 1 
     const width = Math.sqrt(tracker.e(3) * tracker.e(4))
     const x = tracker.e(1) - width/2
-    const height = x.e(3) / width
+    const height = tracker.e(3) / width
     const y = tracker.e(2) - height/2
-
-    const bbox = {x, y, width, height}
-
-    return bbox
+    
+    return {x, y, width, height}
 }
 
-export function hungarian(costMat) {
-    return munkres(costMat)
+export function generateIndices(length, skip = []) {
+    const out = []
+
+    // sort in ascending order
+    skip = skip.sort((a, b) => a - b)
+
+    for (var i = length - 1; i >= 0; i--) {
+        if (i == skip[skip.length - 1]){
+            skip.pop()
+        }
+        else out.push(i)
+    }
+
+    return out
+}
+
+export function associateDetectionsToTrackers(detections, trackers, iouTreshold = 0.3) {
+    const detInd = generateIndices(detections.length)
+    const trkInd = generateIndices(trackers.length)
+    
+    if (trackers.length == 0 || detections == 0) {
+        return [[], detInd, trkInd]
+    }
+
+    const matches = [] 
+    const iouMat = computeIou(detections, trackers)
+    const hungarianIndices = hungarian(iouMat)
+
+    // remove matched from detInd and trkInd
+    // detInd and trkInd will contain only the unmatched dets/trks
+    for (var i = 0; i < hungarianIndices.rows(); i++) {
+        const match = hungarianIndices.row(i+1)
+        // filter with minimum IoU treshold
+        if (iouMat.e(match.e(1)+1, match.e(2)+1) > iouTreshold) {
+            matches.push(match.elements)
+        }
+    }
+
+    const unmatchedDet = generateIndices(detections.length, hungarianIndices.col(1).elements)
+    const unmatchedTrk = generateIndices(trackers.length, hungarianIndices.col(2).elements)
+
+    return [matches, unmatchedDet, unmatchedTrk]
+}
+
+export function hungarian(iouMat) {
+    const costMat = munkres(iouMat.x(-1).elements)
+    return sylvester.Matrix.create(costMat)
 }
 
 // computes pairwise IoU between bboxes in the form {x, y, width, height}
 // trackers are saved in an array, elements of tracked are produced by SortTracker.getstate() (Kalman) in the format {x, y, width, height}
 // detections are produced by the OD model as an array of objects of the form {x, y, width, height, score, class}
 export function computeIou(detections, tracked) {
-    /// convert to array of arrays of form [[x1, y1, x2, y2], [...], ...]
+    // convert to array of arrays of form [[x1, y1, x2, y2], [...], ...]
     // corner format yields more concise and intuitive formulas for IoU
     detections = detections.map(element => bbox_to_corner(element))
     tracked = tracked.map(element => bbox_to_corner(element))
@@ -66,7 +109,7 @@ export function computeIou(detections, tracked) {
     const w = xx2.subtract(xx1).map(x => Math.max(x, 0))
     const h = yy2.subtract(yy1).map(x => Math.max(x, 0))
 
-    const intersection = mat_multiply(w, h)
+    const intersection = elementWise(w, h, (x, y) => x*y)
 
     det_area = sylvester.Matrix.create(det_area)
     trk_area = sylvester.Matrix.create(trk_area)
@@ -75,49 +118,21 @@ export function computeIou(detections, tracked) {
     const sum_area = pairWise(det_area.elements, trk_area.elements, (x, y) => Number(x) + Number(y))
     const union = sum_area.subtract(intersection)
     
-    const iou = mat_divide(intersection, union)
+    const iou = elementWise(intersection, union, (x, y) => x/y)
 
     return iou
 }
 
-// expect mat as sylver.Matrix, output same format
+// expect mat as sylver.Matrix (output same format)
 // and mat1.dimensions = mat2.dimensions
-export function mat_multiply(mat1, mat2) {
-    const i_max = mat1.dimensions().rows
-    const j_max = mat1.dimensions().cols
+export function elementWise(mat1, mat2, operator) {
+    const i_max = mat1.rows()
+    const j_max = mat1.cols()
 
     const out = sylvester.Matrix.Zero(i_max, j_max)
     for (var i = 0; i < i_max; i++){
         for (var j = 0; j < j_max; j++){
-            out.elements[i][j] = mat1.elements[i][j] * mat2.elements[i][j]
-        }
-    }
-
-    return out
-}
-
-export function mat_divide(mat1, mat2) {
-    const i_max = mat1.dimensions().rows
-    const j_max = mat1.dimensions().cols
-
-    const out = sylvester.Matrix.Zero(i_max, j_max)
-    for (var i = 0; i < i_max; i++){
-        for (var j = 0; j < j_max; j++){
-            out.elements[i][j] = mat1.elements[i][j] / mat2.elements[i][j]
-        }
-    }
-
-    return out
-}
-
-export function mat_sum(mat1, mat2) {
-    const i_max = mat1.dimensions().rows
-    const j_max = mat1.dimensions().cols
-
-    const out = sylvester.Matrix.Zero(i_max, j_max)
-    for (var i = 0; i < i_max; i++){
-        for (var j = 0; j < j_max; j++){
-            out.elements[i][j] = mat1.elements[i][j] + mat2.elements[i][j]
+            out.elements[i][j] = operator(mat1.elements[i][j], mat2.elements[i][j])
         }
     }
 
@@ -255,27 +270,35 @@ export class SortTracker {
         SortTracker.count += 1
         this.history = [this.kf.x.elements]
         this.hits = 0
-        this.hitStreak = 0
         this.age = 0
     }
 
     static count = 0
 
     update(detection) {
-        this.timeSinceUpdate = 0
-        this.hits += 1
-        this.hitStreak += 1
-        this.kf.update({
-            A: this.A,
-            B: this.B,
-            u: this.u,
-            H: this.H,
-            R: this.R,
-            Q: this.Q,
-            C: this.C,
-            y: bbox_to_y(detection)
-        })
-        this.history.push(this.kf.x.elements)
+        if (detection) {
+            this.timeSinceUpdate = 0
+            this.hits += 1
+            this.kf.update({
+                A: this.A,
+                B: this.B,
+                u: this.u,
+                H: this.H,
+                R: this.R,
+                Q: this.Q,
+                C: this.C,
+                y: bbox_to_y(detection)
+            })
+            this.history.push(this.kf.x.elements)
+        }
+        else {
+            // prediction step if there is no detections
+            this.kf.x = this.A.multiply(this.kf.x)
+            this.timeSinceUpdate += 1
+            this.hits = 0
+            this.age += 1
+            this.history.push(this.kf.x.elements)
+        }
     }
 
     getState() {
@@ -290,5 +313,38 @@ export class Sort {
         this.iouTreshold = iouTreshold
         this.trackers = []
         this.frameCount = 0
+    }
+
+    update(detections) {
+        this.frameCount += 1
+        const out = []
+        const trks = this.trackers.map(trk => trk.getState())
+
+        const [matched, unmatchedDet, unmatchedTrk] = associateDetectionsToTrackers(detections, trks, this.iouTreshold)
+        
+        matched.forEach(index => this.trackers[index[0]].update(detections[index[1]]))
+        unmatchedDet.forEach(index => {
+            const trk = new SortTracker(detections[index])
+            this.trackers.push(trk)
+        })
+
+        var i
+        for (i = 0; i < unmatchedTrk.length ; i++){
+            const index = unmatchedTrk[i]
+            // no detection, just update with state transition matrix
+            this.trackers[index].update([])
+        }
+
+        for (i = this.trackers.length - 1; i >= 0; i--) {
+            if (this.trackers[i].timeSinceUpdate < 1
+                && (this.trackers[i].hits >= this.minHits || this.frameCount <= this.minHits)) {
+                    out.push(this.trackers[i].getState())
+            }
+            if (this.trackers[i].timeSinceUpdate > this.maxAge) {
+                this.trackers.pop(i)
+            }
+        }
+        
+        return out
     }
 }
