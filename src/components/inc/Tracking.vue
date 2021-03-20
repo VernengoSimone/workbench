@@ -344,13 +344,22 @@ export default {
     },
     
     testIou() {
-    // we want to minimize cost => maximize IoU
-    const test = new sort.Sort()
-    test.update(this.debugMatches.tracked)
-    test.update(this.debugMatches.detections)
-    console.log(test)
+      // we want to minimize cost => maximize IoU
+      const test = new sort.Sort()
+      this.debugMatches.detections.forEach(frame => {
+        const keys = Object.keys(frame)
+        const detections = []
+        keys.forEach(index => {
+          detections.push(frame[index])
+        })
+        
+        test.update(detections)
+        const matches = test.trackers.map(tracker => tracker.id)
+        const trackers = test.trackers.map(tracker => tracker.getState())
+        console.log(matches, trackers)
+      })
+      console.log(test)  
     },
-    
   },
 }
 

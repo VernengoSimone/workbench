@@ -12,7 +12,7 @@ const store = new Vuex.Store({
     inferMode: "auto",
     inferTime: 0.2,
     debugMeasures: null,
-    debugMatches: {detections: {}, tracked: {}, matches: {}},
+    debugMatches: {detections: {}, trackers: {}},
   },
   getters: {
     getFps: state => state.fps,
@@ -75,37 +75,32 @@ const store = new Vuex.Store({
     },
 
     setDebugMatches (state, input) {
-      var keys = Object.keys(input.detections)
-      state.debugMatches.detections = keys.map(key => {
-        const measure = {
-          x: input.detections[key].x,
-          y: input.detections[key].y,
-          width: input.detections[key].width,
-          height: input.detections[key].height
-        }
-        return measure
+      // detections contains all the detection for each frame
+      var frames = Object.keys(input.detections)
+      frames.sort()
+      var keys = []
+      state.debugMatches.detections = frames.map(frame => {
+        keys = Object.keys(input.detections[frame])
+        const measures = keys.map(key => {
+          const measure = {
+            x: input.detections[frame][key].x,
+            y: input.detections[frame][key].y,
+            width: input.detections[frame][key].width,
+            height: input.detections[frame][key].height
+          }
+          return measure
+        })
+        return measures
       })
 
-      keys = Object.keys(input.tracked)
-      state.debugMatches.tracked = keys.map(key => {
-        const measure = {
-          x: input.tracked[key].x,
-          y: input.tracked[key].y,
-          width: input.tracked[key].width,
-          height: input.tracked[key].height
-        }
-        return measure
+      keys = Object.keys(input.trackers)
+      keys.sort()
+      state.debugMatches.trackers = keys.map(key => {
+        return input.trackers[key]
       })
-
-      keys = Object.keys(input.matches)
-      state.debugMatches.matches = keys.map(key => {
-        const matches = {
-          detection: input.matches[key].detection,
-          tracked: input.matches[key].tracked 
-        }
-        return matches
-      })
+      console.log(state.debugMatches)
     },
+
   }
 })
 

@@ -1,6 +1,6 @@
-import * as kalman from "kalman"
-import * as sylvester from "sylvester"
+import * as math from "mathjs"
 import * as munkres from "munkres-js"
+import * as kalman from "./kalman.js"
 
 // convert [x, y, width, height] to [xc, yc, s, r]
 export function bbox_to_y(bbox) {
@@ -9,15 +9,15 @@ export function bbox_to_y(bbox) {
     const s = bbox.width * bbox.height
     const r = bbox.width / bbox.height
 
-    const y = sylvester.Vector.create([xc, yc, s, r])
+    const y = math.matrix([xc, yc, s, r])
 
     return y
 }
 
 // convert [xc, yc, s, r, xc', yc', s'] to [x, y, width, height]
 export function tracker_to_bbox(tracker) {
-    // to access a Sylvester Vector element we use the function e(i)
-    // it returns the element a i-th position with i starting from 1 
+    // to access a Mathjs Vector element we use the function e(i)
+    // it returns the element a i-th position with i starting from 1
     const width = Math.sqrt(tracker.e(3) * tracker.e(4))
     const x = tracker.e(1) - width/2
     const height = tracker.e(3) / width
@@ -53,7 +53,7 @@ export function associateDetectionsToTrackers(detections, trackers, iouTreshold 
     const matches = [] 
     const iouMat = computeIou(detections, trackers)
     const hungarianIndices = hungarian(iouMat)
-
+    
     // remove matched from detInd and trkInd
     // detInd and trkInd will contain only the unmatched dets/trks
     for (var i = 0; i < hungarianIndices.rows(); i++) {
@@ -65,9 +65,8 @@ export function associateDetectionsToTrackers(detections, trackers, iouTreshold 
     }
 
     const unmatchedDet = generateIndices(detections.length, hungarianIndices.col(1).elements)
-    const unmatchedTrk = generateIndices(trackers.length, hungarianIndices.col(2).elements)
-
-    return [matches, unmatchedDet, unmatchedTrk]
+    
+    return [matches, unmatchedDet]
 }
 
 export function hungarian(iouMat) {
@@ -83,37 +82,37 @@ export function computeIou(detections, tracked) {
     // corner format yields more concise and intuitive formulas for IoU
     detections = detections.map(element => bbox_to_corner(element))
     tracked = tracked.map(element => bbox_to_corner(element))
-
+    
     // flatten list of detections
     const det_flat = {x1: [], y1: [], x2: [], y2: []};
     var det_area = [];
     [det_flat.x1, det_flat.y1, det_flat.x2, det_flat.y2, det_area] = flatten(detections);
-
+    
     const trk_flat = {x1: [], y1: [], x2: [], y2: []};
     var trk_area = [];
     [trk_flat.x1, trk_flat.y1, trk_flat.x2, trk_flat.y2, trk_area] = flatten(tracked);
-
+    
     // find the pairwise maximum between all coordinates of the top left corner of the detections and the trackers
     // e.g. compare x_1d w/ x_1t and take the maximum, x_1d w/ x_2t and so on for all x_id
     // x_id -> x coordinate of i-th detection
     // x_it -> x coordinate of i-th tracker 
     const xx1 = pairWise(det_flat.x1, trk_flat.x1, Math.max)
     const yy1 = pairWise(det_flat.y1, trk_flat.y1, Math.max)
-
+    
     // find pairwise minimum between all coordinates of the top left corner...
     const xx2 = pairWise(det_flat.x2, trk_flat.x2, Math.min)
     const yy2 = pairWise(det_flat.y2, trk_flat.y2, Math.min)
-
+    
     // compute the area of the intersection rectangle
     // if w<0 or h<0 there is no overlap
     const w = xx2.subtract(xx1).map(x => Math.max(x, 0))
     const h = yy2.subtract(yy1).map(x => Math.max(x, 0))
-
+    
     const intersection = elementWise(w, h, (x, y) => x*y)
-
+    
     det_area = sylvester.Matrix.create(det_area)
     trk_area = sylvester.Matrix.create(trk_area)
-        
+    
     // compute the union
     const sum_area = pairWise(det_area.elements, trk_area.elements, (x, y) => Number(x) + Number(y))
     const union = sum_area.subtract(intersection)
@@ -123,7 +122,7 @@ export function computeIou(detections, tracked) {
     return iou
 }
 
-// expect mat as sylver.Matrix (output same format)
+// expect mat as math.matrix (output same format)
 // and mat1.dimensions = mat2.dimensions
 export function elementWise(mat1, mat2, operator) {
     const i_max = mat1.rows()
@@ -140,7 +139,7 @@ export function elementWise(mat1, mat2, operator) {
 }
 
 // compute pairwise comparison between to 1d array of lengths arr1.length and arr2.length
-// output arr1.len x arr2.len sylvester.Matrix
+// output arr1.len x arr2.len math.matrix
 export function pairWise(arr1, arr2, operator) {
     const i_max = arr1.length
     const j_max = arr2.length
@@ -202,21 +201,16 @@ export class SortTracker {
         // These values will be used only for initialization
 
         const x0 = bbox_to_y(measure).elements.concat([0, 0, 0])
-        const x = sylvester.Vector.create(x0)
+        var x = sylvester.Vector.create(x0)
 
         // P0 - (P in SORT) State Covariance matrix
         // we assign high uncertainty to unobservable initial velocities
         const P = sylvester.Matrix.Diagonal([10, 10, 10, 10, 10000, 10000, 10000])
 
-        // create Kalman Filter object, this will be updated every step
-        this.kf = new kalman.KF(x, P)
-
-        // These values will be passed to kalman every update
-
-        // A (F in SORT) - State Transition matrix
+        // F i- State Transition matrix
         // This matrix is used to define the prediction model.
         // We adopt a constant velocity model with time-step 1.
-        this.A = sylvester.Matrix.create([
+        const F = sylvester.Matrix.create([
             // position along the axis
             // x = x_0 + v * dt
             [1,0,0,0,1,0,0],
@@ -232,13 +226,6 @@ export class SortTracker {
             [0,0,0,0,0,0,1]
         ]);
         
-        // B - input design matrix
-        // convert input to state's vector space.
-        this.B = sylvester.Matrix.I(7)
-
-        // u - linear input variable. No input, u is zero.
-        this.u = sylvester.Vector.Zero(7)
-        
         // H - Observation matrix
         // This matrix's purpose is to linearly map the measure vector
         // to the state vector's space. In this case we map a 7-dimensional
@@ -246,7 +233,7 @@ export class SortTracker {
         // Check x0 for further informations about the state's space.
         // We do not measure the derivatives therefore the last 3 columns's entires
         // are all 0s
-        this.H = sylvester.Matrix.create([
+        const H = sylvester.Matrix.create([
             [1,0,0,0,0,0,0],
             [0,1,0,0,0,0,0],
             [0,0,1,0,0,0,0],
@@ -255,14 +242,25 @@ export class SortTracker {
         
         // R - Detection Noise Coviarance
         // self.R = eye(dim_z)
-        this.R = sylvester.Matrix.Diagonal([1, 1, 10, 10])
+        const R = sylvester.Matrix.Diagonal([1, 1, 10, 10])
 
         // Q - Process noise covariance matrix
-        this.Q = sylvester.Matrix.Diagonal([1, 1, 1, 1, 0.01, 0.01, 0.0001])
+        const Qk = sylvester.Matrix.Diagonal([1, 1, 1, 1, 0.01, 0.01, 0.0001])
 
         // C - measurement design matrix (identity matrix)
         // used to apply an optional linear transformation to the measurements
-        this.C = sylvester.Matrix.I(4)
+        const C = sylvester.Matrix.I(4)
+
+        // create Kalman Filter object, this will be updated every step
+        this.kf = new kalman.KF({
+            x0: x,
+            P0: P,
+            F: F,
+            C: C,
+            H: H,
+            Qk: Qk,
+            R: R
+        })
 
         // we keep track of how much time passed after last detection
         this.timeSinceUpdate = 0
@@ -275,30 +273,30 @@ export class SortTracker {
 
     static count = 0
 
-    update(detection) {
-        if (detection) {
-            this.timeSinceUpdate = 0
-            this.hits += 1
-            this.kf.update({
-                A: this.A,
-                B: this.B,
-                u: this.u,
-                H: this.H,
-                R: this.R,
-                Q: this.Q,
-                C: this.C,
-                y: bbox_to_y(detection)
+    predict() {
+        // prediction step if there is no detections
+        if (this.kf.x.e(3) + this.kf.x.e(7) <= 0) {
+            const state = this.kf.x.map((x, i) => {
+                if (i == 7) {
+                    return 0
+                }
+                return x
             })
-            this.history.push(this.kf.x.elements)
+            // TODO: complete
+            this.kf.setState(sylvester.Vector.create(state))
+            console.log(this.kf.x, sylvester.Vector.create(state))
         }
-        else {
-            // prediction step if there is no detections
-            this.kf.x = this.A.multiply(this.kf.x)
-            this.timeSinceUpdate += 1
-            this.hits = 0
-            this.age += 1
-            this.history.push(this.kf.x.elements)
-        }
+        this.kf.predict()
+        this.timeSinceUpdate += 1
+        this.hits = 0
+        this.age += 1
+    }
+
+    update(detection) {
+        this.timeSinceUpdate = 0
+        this.hits += 1
+        this.kf.update(bbox_to_y(detection))
+        this.history.push(this.kf.x.elements)
     }
 
     getState() {
@@ -318,10 +316,15 @@ export class Sort {
     update(detections) {
         this.frameCount += 1
         const out = []
+        this.trackers.forEach(trk => {
+            console.log("start", trk.id, trk.kf, trk.getState())
+            trk.predict()
+            console.log(trk.id, trk.kf, trk.getState())
+        })
         const trks = this.trackers.map(trk => trk.getState())
-
-        const [matched, unmatchedDet, unmatchedTrk] = associateDetectionsToTrackers(detections, trks, this.iouTreshold)
         
+        const [matched, unmatchedDet] = associateDetectionsToTrackers(detections, trks, this.iouTreshold)
+
         matched.forEach(index => this.trackers[index[0]].update(detections[index[1]]))
         unmatchedDet.forEach(index => {
             const trk = new SortTracker(detections[index])
@@ -329,12 +332,6 @@ export class Sort {
         })
 
         var i
-        for (i = 0; i < unmatchedTrk.length ; i++){
-            const index = unmatchedTrk[i]
-            // no detection, just update with state transition matrix
-            this.trackers[index].update([])
-        }
-
         for (i = this.trackers.length - 1; i >= 0; i--) {
             if (this.trackers[i].timeSinceUpdate < 1
                 && (this.trackers[i].hits >= this.minHits || this.frameCount <= this.minHits)) {
