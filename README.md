@@ -11,7 +11,7 @@ NOTE: Here we refer to models which determine if there are objects belonging to 
 - [X] Implement YoloV3-tiny (or a previous version, depending on which works better on TF.js) and compare with built-in model
 - [X] Webscrape images of network devices
 - [X] Create a dataset by annotating the images
-- [ ] Train OD model for classes of interest
+- [X] Train OD model for classes of interest
 - [X] Track accuracy an  d speed metrics
 - [X] Implement SORT OT algorithm
 
