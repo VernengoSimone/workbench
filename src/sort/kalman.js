@@ -18,11 +18,7 @@ export class KF {
 
         // Predicted process Covariance Matrix
         // P_k = F * P_{k-1} * F^t + Q_k
-        var Phat = this.F.multiply(this.P) multiply( this.F.transpose() ). add(this.Q)
-        var Phat = math.add(
-            math.multiply(math.multiply(this.F, this.P), math.transpose(this.F)), this.Q
-            )
-
+        var Phat = math.add(math.multiply(math.multiply(this.F, this.P), math.transpose(this.F)), this.Q)
 
         this.x = xhat
         this.P = Phat

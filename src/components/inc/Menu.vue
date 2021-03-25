@@ -4,7 +4,7 @@
             Work in progress
         </div>
         <label
-            for="inputKalan"
+            for="inputKalman"
             class="label"
         >
         Upload measure (JSON)
@@ -49,34 +49,37 @@ export default {
         }
   },
   methods: {
-      async jsonToMatches() {
-        const data = await this.readInputFile(this.$refs.inputMatching)
-        this.$store.commit("setDebugMatches", data)
-      },
-      async jsonToMeasure() {
-        const data = await this.readInputFile(this.$refs.inputKalman)
-        this.$store.commit("setDebugMeasures", data)
-      },
-      // this function read the input file as a string in order to parse it
-      async readInputFile(file) {
-        return new Promise((resolve, reject) => {
-            const fileReader = new FileReader()
-            fileReader.onload = event => resolve(JSON.parse(event.target.result))
-            fileReader.onerror = error => reject(error)
-            fileReader.readAsText(file.files[0])
-        })
-      },
-      changeInferMode() {
-        switch (this.inferMode) {
-            case "auto":
-                this.$store.commit("setInferMode", "user")
-                break
-            case "user":
-                this.$store.commit("setInferMode", "auto")
-                break
+        async jsonToMatches() {
+            const data = await this.readInputFile(this.$refs.inputMatching)
+            this.$store.commit("setDebugMatches", data)
+        },
+        
+        async jsonToMeasure() {
+            const data = await this.readInputFile(this.$refs.inputKalman)
+            this.$store.commit("setDebugMeasures", data)
+        },
+
+        // this function read the input file as a string in order to parse it
+        async readInputFile(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader()
+                fileReader.onload = event => resolve(JSON.parse(event.target.result))
+                fileReader.onerror = error => reject(error)
+                fileReader.readAsText(file.files[0])
+            })
+        },
+
+        changeInferMode() {
+            switch (this.inferMode) {
+                case "auto":
+                    this.$store.commit("setInferMode", "user")
+                    break
+                case "user":
+                    this.$store.commit("setInferMode", "auto")
+                    break
+            }
         }
-      }
-  }
+    }       
 }
 </script>
 
