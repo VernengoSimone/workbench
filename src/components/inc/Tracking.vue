@@ -17,9 +17,7 @@
 import { fabric } from 'fabric'
 import { saveAs } from 'file-saver'
 import '@tensorflow/tfjs'
-// import * as cocoSsd from "@tensorflow-models/coco-ssd"
-import * as cocoSsd from "test-ssd"
-import yolo from "tfjs-yolo"
+import * as cocoSsd from "../../sort/object_detection.js"
 import * as sort from "../../sort/sort.js"
 
 export default {
@@ -41,7 +39,6 @@ export default {
   data: () => ({
     canvas: null,
     model: null,
-    modelName: "coco",
     predictions: [],
     videoRatio: null,
     canvasRatio: null,
@@ -56,6 +53,7 @@ export default {
     time: 0,
     fpsCount: 0,
     interval: null,
+    sort: null,
   }),
   computed: {
     inferMode() {
@@ -69,7 +67,7 @@ export default {
     },
     debugMatches() {
       return this.$store.getters.getDebugMatches
-    }
+    },
   },
   watch: {
     inferMode: function () {
@@ -90,15 +88,7 @@ export default {
   },
   mounted() {
     this.initCanvas()
-    /*
-    if (this.modelName === "yolo") this.initYolo()
-    else if (this.modelName === "coco") this.initCoco(true)
-    */
-    sort.computeIou(
-      [{x: 1, y: 1, width: 1, height: 1}, {x: 2, y: 2, width: 2, height: 2}],
-      [{x: 3, y: 3, width: 3, height: 3}, {x: 4, y: 4, width: 4, height: 4}]
-    )
-
+    this.initCoco()
     },
   destroyed() {
     window.removeEventListener("resize", this.resizeCanvas);
@@ -118,36 +108,25 @@ export default {
       }
     },
 
-    async initCoco(custom){
-      cocoSsd.load()
-      if (custom === true) {
-        this.model = await cocoSsd.load({
-          modelUrl: "http://localhost:8080/model.json"
-        })
-      }
-      else {
-        this.model = await cocoSsd.load()
-      }
+    async initCoco(){
+      this.model = await cocoSsd.load({
+        modelUrl: "http://localhost:8081/model.json"
+      })  
 
       /*
       in order to draw the bboxes in the right place we need
       the actual space occupied by the video and dimensions (offset) of
       the black bars
       */
-      this.computeVideoDimension()
-      this.computeOffset()
-      this.startInference()
-    },
-
-    async initYolo() {
-      this.model = await yolo.v3tiny()
-
+    
       this.computeVideoDimension()
       this.computeOffset()
       this.startInference()
     },
 
     startInference() {
+      this.sort = new sort.Sort()
+
       switch (this.inferMode) {
         case "user":
           // use setInterval to obtain 5 detection sets per second
@@ -214,36 +193,20 @@ export default {
       }
     },
 
-    async identifyObjects() {
-      if (this.modelName === "coco") {
-        const output = await this.model.detect(this.videoStream)
-        const boxes = output.map((element) => {
-          return {
-            x: element.bbox[0],
-            y: element.bbox[1],
-            // TODO: width and height are swapped, find out why
-            width: element.bbox[2],
-            height: element.bbox[3],
-            score: element.score,
-            class: element.class
-          }
-        })
-        return boxes
-      }
-      else if (this.modelName === "yolo"){
-        const output = await this.model.predict(this.videoStream)
-        const boxes = output.map((element) => {
-          return {
-            x: element.left,
-            y: element.top,
-            width: element.width,
-            height: element.height,
-            score: element.score,
-            class: element.class
-          }
-        })
-        return boxes
-      }
+    async identifyObjects() {      
+      const output = await this.model.detect(this.videoStream)
+      const boxes = output.map((element) => {
+        return {
+          x: element.bbox[0],
+          y: element.bbox[1],
+          width: element.bbox[2],
+          height: element.bbox[3],
+          score: element.score,
+          class: element.class
+        }
+      })
+
+      return boxes
     },
 
     async drawBbox(){
@@ -262,12 +225,14 @@ export default {
         this.$store.commit("setIdentifiedObjects", this.predictions)
         
         this.canvas.clear()
-        
-        this.predictions.forEach((element) => {
+
+        const out = this.sort.update(this.predictions)
+
+        out.forEach((element) => {
           this.drawPrediction(
             // translate and scale to fit video size in the window
             this.sumOffset(
-              this.scaleCoordinates(element)
+              this.scaleCoordinates(element.tracker)
             )
           )
         })
@@ -295,6 +260,7 @@ export default {
         top: y,
         fill: "transparent",
         stroke: "yellow",
+        strokeWidth: 3,
         width: width,
         height: height
       })
@@ -322,20 +288,21 @@ export default {
     testKalman() {
       const z0 = this.debugMeasures[0]
       const tracker = new sort.SortTracker(z0)
-      this.debugMeasures.slice(1).forEach(element => {
+      console.log(z0)
+      this.debugMeasures.slice(1).forEach((element, index) => {
+        tracker.predict()
+        console.log(index)
+        console.log(tracker.getState())
+        console.log(element)
         tracker.update(element)
+        console.log(tracker.getState())
       })
       
       // saving the result in order to compare with know estimations
       // we create the structure for the json to be easily readable in python
       const history = {}
       for (var i = 0; i < tracker.history.length; i++) {
-        history[i] = {
-          x: tracker.history[i][0],
-          y: tracker.history[i][1],
-          width: tracker.history[i][2],
-          height: tracker.history[i][3]
-        }
+        history[i] = tracker.history[i]
       }
 
       // and download the file
@@ -346,20 +313,24 @@ export default {
     testIou() {
       // we want to minimize cost => maximize IoU
       const test = new sort.Sort()
-      this.debugMatches.detections.forEach(frame => {
+      this.debugMatches.detections.forEach((frame, index) => {
         const keys = Object.keys(frame)
         const detections = []
         keys.forEach(index => {
           detections.push(frame[index])
         })
         
-        test.update(detections)
-        const matches = test.trackers.map(tracker => tracker.id)
-        const trackers = test.trackers.map(tracker => tracker.getState())
-        console.log(matches, trackers)
+        console.log("frame = " + (index + 1))
+        // console.log(detections)
+        console.log(test.update(detections))
+        console.log(test.trackers.map(trk => trk.id))
       })
       console.log(test)  
     },
+
+    async testSort() {
+      console.log("debug SORT")
+    }
   },
 }
 

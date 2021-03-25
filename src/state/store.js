@@ -10,7 +10,7 @@ const store = new Vuex.Store({
     identifiedObjects: [],
     objCount: 0,
     inferMode: "auto",
-    inferTime: 0.2,
+    inferTime: 0.5,
     debugMeasures: null,
     debugMatches: {detections: {}, trackers: {}},
   },
@@ -29,7 +29,6 @@ const store = new Vuex.Store({
     },
     
     setFpsAvg (state, value) {
-      console.info()
       state.fpsAvg = value
     },
 
@@ -64,20 +63,13 @@ const store = new Vuex.Store({
       // x: coordinate along axis x of the left corner
       // y: coordinate along axis y of the left corner
       state.debugMeasures = keys.map(key => {
-        const measure = [
-          measures[key].x,
-          measures[key].y,
-          measures[key].width,
-          measures[key].height
-        ]
-        return measure
+        return measures[key]
       })
     },
 
     setDebugMatches (state, input) {
       // detections contains all the detection for each frame
       var frames = Object.keys(input.detections)
-      frames.sort()
       var keys = []
       state.debugMatches.detections = frames.map(frame => {
         keys = Object.keys(input.detections[frame])
@@ -94,11 +86,9 @@ const store = new Vuex.Store({
       })
 
       keys = Object.keys(input.trackers)
-      keys.sort()
       state.debugMatches.trackers = keys.map(key => {
         return input.trackers[key]
       })
-      console.log(state.debugMatches)
     },
 
   }

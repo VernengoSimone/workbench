@@ -40,7 +40,7 @@ export default {
             this.$refs.video.muted = true
             this.$refs.video.loop = false
             this.$refs.video.type = "video/mp4"
-            this.$refs.video.src = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4"
+            this.$refs.video.src = "http://localhost:8081/test.mp4"
         })
 
     },
