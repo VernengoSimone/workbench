@@ -13,7 +13,6 @@
             <tr>
                 <th> ID </th>
                 <th> Class </th>
-                <th> Score </th>
             </tr>
             <tr
                 v-for="object in objects"
@@ -21,7 +20,6 @@
             >
                 <td> {{object.id}} </td>
                 <td> {{object.class}} </td>
-                <td> {{object.score}} </td>
             </tr>
         </table>
     </div>

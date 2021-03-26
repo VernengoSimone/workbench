@@ -222,11 +222,17 @@ export default {
         }
 
         this.predictions = await this.identifyObjects()
-        this.$store.commit("setIdentifiedObjects", this.predictions)
         
         this.canvas.clear()
 
         const out = this.sort.update(this.predictions)
+
+        this.$store.commit("setIdentifiedObjects", out.map(trk => {
+          return {
+            id: trk.id,
+            class: trk.class
+            }
+        }))
 
         out.forEach((element) => {
           this.drawPrediction(

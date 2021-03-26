@@ -252,7 +252,7 @@ export class SortTracker {
         const R = math.diag([1, 1, 10, 10])
 
         // Q - Process noise covariance matrix
-        const Qk = math.diag([1, 1, 1, 1, 0.01, 0.01, 0.0001])
+        const Qk = math.diag([1, 1, 1, 1, 0.3, 0.3, 0.001])
 
         // C - measurement design matrix (identity matrix)
         // used to apply an optional linear transformation to the measurements
@@ -272,6 +272,7 @@ export class SortTracker {
         // we keep track of how much time passed after last detection
         this.timeSinceUpdate = 0
         this.id = SortTracker.count
+        this.class = measure.class
         SortTracker.count += 1
         this.history = [tracker_to_bbox(this.kf.x)]
         this.hits = 0
@@ -296,6 +297,7 @@ export class SortTracker {
 
     update(detection) {
         this.timeSinceUpdate = 0
+        this.class = detection.class
         this.hits += 1
         this.kf.update(bbox_to_y(detection))
     }
@@ -336,7 +338,9 @@ export class Sort {
         for (i = this.trackers.length - 1; i >= 0; i--) {
             if (this.trackers[i].timeSinceUpdate < 1
                 && (this.trackers[i].hits >= this.minHits || this.frameCount <= this.minHits)) {
-                    out.push({id: this.trackers[i].id, tracker: this.trackers[i].getState()})
+                    out.push({id: this.trackers[i].id,
+                        class: this.trackers[i].class,
+                        tracker: this.trackers[i].getState()})
             }
             if (this.trackers[i].timeSinceUpdate > this.maxAge) {
                 this.trackers.splice(i, 1)

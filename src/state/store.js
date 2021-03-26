@@ -8,7 +8,6 @@ const store = new Vuex.Store({
     fps: null,
     fpsAvg: null,
     identifiedObjects: [],
-    objCount: 0,
     inferMode: "auto",
     inferTime: 0.5,
     debugMeasures: null,
@@ -33,15 +32,7 @@ const store = new Vuex.Store({
     },
 
     setIdentifiedObjects (state, objects) {
-      state.objCount = 0
       state.identifiedObjects = objects
-      state.identifiedObjects.forEach(
-        (object) => {
-          object.id = state.objCount
-          state.objCount ++
-          object.score = Math.round(object.score * 100) / 100
-        }
-      )
     },
     
     setInferMode (state, value) {
