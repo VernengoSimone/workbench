@@ -61,14 +61,16 @@ export class ObjectDetection {
 
     const result = await this.model.executeAsync(batched)
 
-    const scores = result[1].dataSync();
-    const boxes = result[0].dataSync();
+    console.log(result)
+
+    const scores = result[5].dataSync();
+    const boxes = result[4].dataSync();
     
     // clean the webgl tensors
     batched.dispose();
     tf.dispose(result);
     
-    const [maxScores, classes] = this.calculateMaxScores(scores, result[1].shape[1], result[1].shape[2]);
+    const [maxScores, classes] = this.calculateMaxScores(scores, result[5].shape[1], result[5].shape[2]);
     
     const indexTensor = tf.range(0, maxNumBoxes, 1)
     const indexes = indexTensor.dataSync()
