@@ -332,10 +332,6 @@ export default {
       })
       console.log(test)  
     },
-
-    async testSort() {
-      console.log("debug SORT")
-    }
   },
 }
 

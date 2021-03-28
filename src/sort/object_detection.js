@@ -1,5 +1,7 @@
 import * as tfconv from '@tensorflow/tfjs-converter';
 import * as tf from '@tensorflow/tfjs-core';
+import '@tensorflow/tfjs-backend-webgl';
+import '@tensorflow/tfjs-backend-cpu';
 
 import {CLASSES} from './classes';
 
@@ -25,6 +27,7 @@ export class ObjectDetection {
 
    async load() {
     this.model = await tfconv.loadGraphModel(this.modelPath);
+
 
     const zeroTensor = tf.zeros([1, 300, 300, 3], 'int32');
     // Warmup the model.
@@ -57,8 +60,6 @@ export class ObjectDetection {
     const width = batched.shape[2];
 
     const result = await this.model.executeAsync(batched)
-
-    console.log(result)
 
     const scores = result[1].dataSync();
     const boxes = result[0].dataSync();
