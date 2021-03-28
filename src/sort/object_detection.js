@@ -1,7 +1,7 @@
 import * as tfconv from '@tensorflow/tfjs-converter';
 import * as tf from '@tensorflow/tfjs-core';
 import '@tensorflow/tfjs-backend-webgl';
-// import '@tensorflow/tfjs-backend-cpu';
+import '@tensorflow/tfjs-backend-cpu';
 
 import {CLASSES} from './classes';
 
