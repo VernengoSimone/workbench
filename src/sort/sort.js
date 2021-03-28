@@ -252,7 +252,7 @@ export class SortTracker {
         const R = math.diag([1, 1, 10, 10])
 
         // Q - Process noise covariance matrix
-        const Qk = math.diag([1, 1, 1, 1, 0.3, 0.3, 0.001])
+        const Qk = math.diag([1, 1, 1, 1, 0.1, 0.1, 0.001])
 
         // C - measurement design matrix (identity matrix)
         // used to apply an optional linear transformation to the measurements

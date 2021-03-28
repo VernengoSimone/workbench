@@ -216,7 +216,7 @@ export default {
         if (this.time === 0) this.time = Date.now()
         // Here we calculate the frame rate every second
         else if (timeInterval >= 1000) {
-          this.$store.commit("setFps", 1000 * this.fpsCount / timeInterval)
+          this.$store.commit("setFps", { fps: 1000 * this.fpsCount, interval: timeInterval})
           this.time = Date.now()
           this.fpsCount = 0
         }

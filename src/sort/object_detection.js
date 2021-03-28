@@ -58,18 +58,20 @@ export class ObjectDetection {
 
     const result = await this.model.executeAsync(batched)
 
+    console.log(result)
+
     const scores = result[1].dataSync();
     const boxes = result[0].dataSync();
-
+    
     // clean the webgl tensors
     batched.dispose();
     tf.dispose(result);
-
+    
     const [maxScores, classes] = this.calculateMaxScores(scores, result[1].shape[1], result[1].shape[2]);
-
+    
     const indexTensor = tf.range(0, maxNumBoxes, 1)
     const indexes = indexTensor.dataSync()
-
+    
     return this.buildDetectedObjects(
         width, height, boxes, maxScores, indexes, classes);
   }
@@ -94,7 +96,7 @@ export class ObjectDetection {
         bbox[3] = maxY - minY;
         objects.push({
           bbox: bbox,
-          class: CLASSES[classes[indexes[i]] + 1].displayName,
+          class: CLASSES[classes[indexes[i]]].displayName,
           score: scores[indexes[i]]
         });
       }

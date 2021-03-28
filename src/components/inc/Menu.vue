@@ -37,15 +37,26 @@
         >
         Change Inference Mode
         </button>
+        <button
+            class="switch-mode"
+            @click="downloadFrameTimes"
+        >
+        Download frame times
+        </button>
     </div>
 </template>
 
 <script>
+import { saveAs } from 'file-saver'
+
 export default {
   name: 'Menu',
   computed: {
         inferMode() {
             return this.$store.getters.getInferMode
+        },
+        frameTimes() {
+            return this.$store.getters.getFrameTimes
         }
   },
   methods: {
@@ -78,6 +89,11 @@ export default {
                     this.$store.commit("setInferMode", "auto")
                     break
             }
+        },
+
+        downloadFrameTimes() {
+                var blob = new Blob([JSON.stringify(this.frameTimes)], {type: "application/json"});
+                saveAs(blob, "frameTimes.txt");
         }
     }       
 }

@@ -6,7 +6,8 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     fps: null,
-    fpsAvg: null,
+    frameTimes: [],
+    frameCount: 0,
     identifiedObjects: [],
     inferMode: "auto",
     inferTime: 0.5,
@@ -15,7 +16,7 @@ const store = new Vuex.Store({
   },
   getters: {
     getFps: state => state.fps,
-    getFpsAvg: state => state.fpsAvg,
+    getFrameTimes: state => state.frameTimes,
     getIdentifiedObjects: state => state.identifiedObjects,
     getInferMode: state => state.inferMode,
     getInferTime: state => state.inferTime,
@@ -24,11 +25,9 @@ const store = new Vuex.Store({
   },
   mutations: {
     setFps (state, value) {
-      state.fps = Math.round(value * 10) / 10
-    },
-    
-    setFpsAvg (state, value) {
-      state.fpsAvg = value
+      state.fps = Math.round(value.fps * 10 / value.interval) / 10
+      state.frameCount += 1
+      state.frameTimes.push({interval: value.interval, fps: value.fps / state.fps})
     },
 
     setIdentifiedObjects (state, objects) {
