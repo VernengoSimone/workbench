@@ -16,7 +16,6 @@
 
 import { fabric } from 'fabric'
 import { saveAs } from 'file-saver'
-import '@tensorflow/tfjs'
 import * as cocoSsd from "../../sort/object_detection.js"
 import * as sort from "../../sort/sort.js"
 
