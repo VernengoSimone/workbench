@@ -24,3 +24,12 @@ yarn install
 ```
 yarn serve
 ```
+
+## Load the model
+
+To load the model expose both the detection model weights and the test video on localhost:8081
+Navigate the model folder TFJS/SSFfpn* and run
+
+```
+http-server -c1 --cors .
+```
