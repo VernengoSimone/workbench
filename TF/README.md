@@ -3,6 +3,7 @@
 Once you have your annotated images in COCO format you can use split_data.py to split the dataset in the train and test (optionally also validation) sets. The script assumes that the directory structure is
 
 current_dir
+<<<<<<< HEAD
 -> images
 --> img_01.png
 --> img_02.png
@@ -10,6 +11,15 @@ current_dir
 --> ...
 -> annotations
 --> instances_default.json
+=======
+- images
+-- img_01.png
+-- img_02.png
+-- ...
+-- ...
+- annotations
+-- instances_default.json
+>>>>>>> 97de3b90735f3d09fd8f610e8027f0b0080b7c65
 
 and create the train and test splits. If needed you can import the Coco_dataset class to manipulate the dataset (e.g. rename, filter categories).
 
