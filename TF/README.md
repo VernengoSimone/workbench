@@ -1,18 +1,7 @@
 ## Create dataset splits
 
-Once you have your annotated images in COCO format you can use split_data.py to split the dataset in the train and test (optionally also validation) sets. The script assumes that the directory structure is
-
-current_dir
--> images
---> img_01.png
---> img_02.png
---> ...
---> ...
--> annotations
---> instances_default.json
-
-and create the train and test splits. If needed you can import the Coco_dataset class to manipulate the dataset (e.g. rename, filter categories).
-
+Once you have your annotated images in COCO format you can use split_data.py to split the dataset in the train and test (optionally also validation) sets. The script assumes that the directory in which you run it contains a folder named images with all the images in .png format and a folder named annotations with the instances_default.json file with all the annotations.
+When launched in the folder this script create the train and test splits. If needed you can import the Coco_dataset class to manipulate the dataset (e.g. rename, filter categories, change output/input directory).
 
 ## Colab notebooks for training
 
