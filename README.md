@@ -33,3 +33,7 @@ Navigate the model folder TFJS/SSFfpn* and run
 ```
 http-server -c1 --cors .
 ```
+
+## Note
+
+The two detection models have different outputs, when switching to the other you most modify object_detection.js in the sort folder. The scores and boxes variables in the infer() method must be set to the right element of the result array. The model is currently set for the 640x640 detection model.  
