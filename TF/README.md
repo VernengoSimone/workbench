@@ -1,4 +1,20 @@
-# Colab notebooks for training
+## Create dataset splits
+
+Once you have your annotated images in COCO format you can use split_data.py to split the dataset in the train and test (optionally also validation) sets. The script assumes that the directory structure is
+
+current_dir
+-> images
+--> img_01.png
+--> img_02.png
+--> ...
+--> ...
+-> annotations
+--> instances_default.json
+
+and create the train and test splits. If needed you can import the Coco_dataset class to manipulate the dataset (e.g. rename, filter categories).
+
+
+## Colab notebooks for training
 
 The pipeline has been developed in Google Colab. The file a described following the pipeline order.
 
